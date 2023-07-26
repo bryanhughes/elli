@@ -11,3 +11,4 @@ ebin/**
 .dialyzer.plt
 .rebar
 rebar3.crashdump
+.idea

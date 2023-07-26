@@ -42,17 +42,30 @@ accept({ssl, Socket}, Server, Timeout) ->
             {error, Reason}
     end.
 
--ifdef(post20).
-handshake(S, Server, Timeout) ->
-    case ssl:handshake(S, Timeout) of
-        {ok, S1} ->
-            gen_server:cast(Server, accepted),
-            {ok, {ssl, S1}};
-        {error, closed} ->
-            {error, econnaborted};
-        {error, Reason} ->
-            {error, Reason}
-    end.
+-ifdef(OTP_RELEASE).
+    -if(?OTP_RELEASE >= 23).
+    handshake(S, Server, Timeout) ->
+        case ssl:handshake(S, Timeout) of
+            {ok, S1} ->
+                gen_server:cast(Server, accepted),
+                {ok, {ssl, S1}};
+            {error, closed} ->
+                {error, econnaborted};
+            {error, Reason} ->
+                {error, Reason}
+        end.
+    -else.
+    handshake(S, Server, Timeout) ->
+        case ssl:ssl_accept(S, Timeout) of
+            ok ->
+                gen_server:cast(Server, accepted),
+                {ok, {ssl, S}};
+            {error, closed} ->
+                {error, econnaborted};
+            {error, Reason} ->
+                {error, Reason}
+        end.
+    -endif.
 -else.
 handshake(S, Server, Timeout) ->
     case ssl:ssl_accept(S, Timeout) of
